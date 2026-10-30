@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">AdBlocker</string>
+    <string name="skip_service_description">Taps the Skip ad button in the YouTube app when it appears. Reads only the YouTube screen.</string>
 </resources>

@@ -10,7 +10,7 @@ These are excluded from the filter (`BlockerService.BYPASS_APPS`) so they always
 Upstream DNS now comes from the active network (with 1.1.1.1 / 8.8.8.8 as fallback), and DNS-over-TCP
 attempts get an immediate reset instead of hanging.
 
-## YouTube
-DNS filtering blocks `ads.youtube.com`, `doubleclick.net` and friends, but the YouTube app serves video ads
-from the same `googlevideo.com` hosts as the videos themselves, so a DNS blocker cannot remove them without
-breaking playback. Use a patched client (ReVanced / SmartTube) or a browser with uBlock Origin for that.
+## YouTube (ad skipper)
+Enable "YouTube ad skipper" in the app (Accessibility settings). It taps the Skip ad button the moment it appears.
+Unskippable ads still play: DNS filtering cannot remove them because YouTube serves ads from the same
+`googlevideo.com` hosts as videos. For full removal use a patched client (ReVanced / SmartTube) or uBlock Origin in a browser.

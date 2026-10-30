@@ -9,6 +9,7 @@ import android.graphics.drawable.GradientDrawable
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.Gravity
 import android.widget.Button
 import android.widget.LinearLayout
@@ -32,9 +33,13 @@ class MainActivity : Activity() {
             layoutParams = LinearLayout.LayoutParams(480, 480)
             setOnClickListener { if (BlockerService.running) stopBlocking() else startBlocking() }
         }
+        val skip = Button(this).apply {
+            text = "Enable YouTube ad skipper"
+            setOnClickListener { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+        }
         setContentView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            addView(status); addView(button); addView(note)
+            addView(status); addView(button); addView(note); addView(skip)
         })
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
