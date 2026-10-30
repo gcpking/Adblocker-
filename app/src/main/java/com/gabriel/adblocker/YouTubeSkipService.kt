@@ -12,10 +12,41 @@ class YouTubeSkipService : AccessibilityService() {
     )
     private val skipTexts = listOf("skip ads", "skip ad", "skip")
 
+    private var adActive = false
+    private var lastAdSeen = 0L
+    private val adLabel = Regex("(?i)^(ad\\s*(·|•|\\d|of)|visit advertiser|sponsored|why this ad).*")
+
+    /** Looks through the on-screen texts for YouTube's ad markers. */
+    private fun adOnScreen(node: AccessibilityNodeInfo, budget: IntArray): Boolean {
+        if (budget[0]-- <= 0) return false
+        val label = (node.text ?: node.contentDescription)?.toString()?.trim()
+        if (label != null && label.length < 80 && adLabel.matches(label)) return true
+        if (node.viewIdResourceName == "com.google.android.youtube:id/ad_progress_text") return true
+        for (i in 0 until node.childCount) {
+            val c = node.getChild(i) ?: continue
+            if (adOnScreen(c, budget)) return true
+        }
+        return false
+    }
+
+    private fun trackAd(root: AccessibilityNodeInfo) {
+        val now = System.currentTimeMillis()
+        if (adOnScreen(root, intArrayOf(500))) {
+            lastAdSeen = now
+            if (!adActive) {
+                adActive = true
+                if (Prefs.cutEnabled(this)) BlockerService.instance?.cutYouTube()
+            }
+        } else if (adActive && now - lastAdSeen > 3000) {
+            adActive = false
+        }
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val root = rootInActiveWindow ?: return
         if (root.packageName != "com.google.android.youtube") return
         try {
+            trackAd(root)
             for (id in skipIds) {
                 for (n in root.findAccessibilityNodeInfosByViewId(id)) if (click(n)) return
             }

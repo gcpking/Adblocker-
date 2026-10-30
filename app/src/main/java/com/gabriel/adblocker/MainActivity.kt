@@ -41,9 +41,14 @@ class MainActivity : Activity() {
             text = "Open ad-free browser"
             setOnClickListener { startActivity(Intent(this@MainActivity, BrowserActivity::class.java)) }
         }
+        val cut = Button(this).apply {
+            fun label() { text = "Experimental: cut YouTube during ads: " + if (Prefs.cutEnabled(this@MainActivity)) "ON" else "OFF" }
+            label()
+            setOnClickListener { Prefs.setCutEnabled(this@MainActivity, !Prefs.cutEnabled(this@MainActivity)); label() }
+        }
         setContentView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            addView(status); addView(button); addView(note); addView(skip); addView(browse)
+            addView(status); addView(button); addView(note); addView(skip); addView(browse); addView(cut)
         })
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {

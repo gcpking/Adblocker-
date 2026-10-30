@@ -18,3 +18,8 @@ Unskippable ads still play: DNS filtering cannot remove them because YouTube ser
 ## Ad-free browser
 "Open ad-free browser" in the app loads sites in a built-in WebView that drops requests to blocklisted hosts,
 hides leftover ad elements, and on YouTube web skips/fast-forwards ads. Ad sites change often, so some may slip through.
+
+## Experimental: cut YouTube during ads
+With the ad skipper enabled and blocking turned on, the "cut YouTube during ads" switch drops the YouTube app's
+connection for ~2.5 s when an ad marker is seen on screen, hoping YouTube resumes without the ad. Untested; the on-screen
+markers (`Ad ·`, `Visit advertiser`, `Sponsored`) are best guesses and may need adjusting per YouTube version.
