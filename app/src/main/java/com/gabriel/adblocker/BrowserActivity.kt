@@ -30,7 +30,7 @@ class BrowserActivity : Activity() {
 
     // Same idea as uBlock Origin's json-prune: delete the ad list from YouTube's player data
     // before the player reads it, so it never schedules any ads.
-    private val prune = ${'"'*3}
+    private val prune = """
         (function(){
           var keys=['adPlacements','playerAds','adSlots','adBreakHeartbeatParams'];
           function prune(o){
@@ -47,7 +47,7 @@ class BrowserActivity : Activity() {
           try{ Object.defineProperty(window,'ytInitialPlayerResponse',{
             get:function(){return v;}, set:function(x){ try{ prune(x); }catch(e){} v=x; }, configurable:true }); }catch(e){}
         })();
-    ${'"'*3}.trimIndent()
+    """.trimIndent()
 
     // YouTube (web): click skip, or mute and jump to the end of any ad that is playing.
     private val js = """
