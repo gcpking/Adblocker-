@@ -14,3 +14,7 @@ attempts get an immediate reset instead of hanging.
 Enable "YouTube ad skipper" in the app (Accessibility settings). It taps the Skip ad button the moment it appears.
 Unskippable ads still play: DNS filtering cannot remove them because YouTube serves ads from the same
 `googlevideo.com` hosts as videos. For full removal use a patched client (ReVanced / SmartTube) or uBlock Origin in a browser.
+
+## Ad-free browser
+"Open ad-free browser" in the app loads sites in a built-in WebView that drops requests to blocklisted hosts,
+hides leftover ad elements, and on YouTube web skips/fast-forwards ads. Ad sites change often, so some may slip through.

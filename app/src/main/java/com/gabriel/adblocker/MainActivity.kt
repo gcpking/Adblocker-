@@ -37,9 +37,13 @@ class MainActivity : Activity() {
             text = "Enable YouTube ad skipper"
             setOnClickListener { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
         }
+        val browse = Button(this).apply {
+            text = "Open ad-free browser"
+            setOnClickListener { startActivity(Intent(this@MainActivity, BrowserActivity::class.java)) }
+        }
         setContentView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            addView(status); addView(button); addView(note); addView(skip)
+            addView(status); addView(button); addView(note); addView(skip); addView(browse)
         })
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {

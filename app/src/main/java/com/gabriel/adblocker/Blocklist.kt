@@ -19,6 +19,8 @@ object Blocklist {
 
     @Volatile private var blocked: Set<String> = emptySet()
 
+    fun ensureLoaded(context: Context) { if (blocked.isEmpty()) load(context) }
+
     fun load(context: Context) {
         val local = File(context.filesDir, "blocklist.txt")
         val lines = if (local.exists()) local.readLines()
