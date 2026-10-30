@@ -10,6 +10,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.EditText
 import android.widget.LinearLayout
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import java.io.ByteArrayInputStream
 
 /** Small browser that drops requests to blocklisted hosts and hides leftover ad elements. */
@@ -25,6 +27,27 @@ class BrowserActivity : Activity() {
         .ytp-ad-module,ytm-promoted-sparkles-web-renderer,ytm-companion-ad-renderer,
         ytd-display-ad-renderer,ytd-banner-promo-renderer{display:none!important}
     """.trimIndent().replace("\n", " ")
+
+    // Same idea as uBlock Origin's json-prune: delete the ad list from YouTube's player data
+    // before the player reads it, so it never schedules any ads.
+    private val prune = ${'"'*3}
+        (function(){
+          var keys=['adPlacements','playerAds','adSlots','adBreakHeartbeatParams'];
+          function prune(o){
+            if(!o||typeof o!=='object') return o;
+            for(var i=0;i<keys.length;i++){ if(keys[i] in o){ try{ delete o[keys[i]]; }catch(e){} } }
+            if(o.playerResponse) prune(o.playerResponse);
+            return o;
+          }
+          var pj=JSON.parse;
+          JSON.parse=function(){ var r=pj.apply(this,arguments); try{ prune(r); }catch(e){} return r; };
+          var rj=Response.prototype.json;
+          Response.prototype.json=function(){ return rj.apply(this,arguments).then(function(r){ try{ prune(r); }catch(e){} return r; }); };
+          var v;
+          try{ Object.defineProperty(window,'ytInitialPlayerResponse',{
+            get:function(){return v;}, set:function(x){ try{ prune(x); }catch(e){} v=x; }, configurable:true }); }catch(e){}
+        })();
+    ${'"'*3}.trimIndent()
 
     // YouTube (web): click skip, or mute and jump to the end of any ad that is playing.
     private val js = """
@@ -60,7 +83,7 @@ class BrowserActivity : Activity() {
                         WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0))) else null
                 }
                 override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
-                    bar.setText(url); view.evaluateJavascript(js, null)
+                    bar.setText(url); view.evaluateJavascript(prune, null); view.evaluateJavascript(js, null)
                 }
                 override fun onPageFinished(view: WebView, url: String) { view.evaluateJavascript(js, null) }
             }
@@ -70,6 +93,9 @@ class BrowserActivity : Activity() {
             addView(bar)
             addView(web, LinearLayout.LayoutParams(-1, 0, 1f))
         })
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            WebViewCompat.addDocumentStartJavaScript(web, prune, setOf("https://*.youtube.com", "https://youtube.com"))
+        }
         go(intent.dataString ?: "https://m.youtube.com")
     }
 
