@@ -46,9 +46,14 @@ class MainActivity : Activity() {
             label()
             setOnClickListener { Prefs.setCutEnabled(this@MainActivity, !Prefs.cutEnabled(this@MainActivity)); label() }
         }
+        val markerCut = Button(this).apply {
+            fun label() { text = "Experimental: cut 5s before ad markers: " + if (Prefs.markerCutEnabled(this@MainActivity)) "ON" else "OFF" }
+            label()
+            setOnClickListener { Prefs.setMarkerCutEnabled(this@MainActivity, !Prefs.markerCutEnabled(this@MainActivity)); label() }
+        }
         setContentView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            addView(status); addView(button); addView(note); addView(skip); addView(browse); addView(cut)
+            addView(status); addView(button); addView(note); addView(skip); addView(browse); addView(cut); addView(markerCut)
         })
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {

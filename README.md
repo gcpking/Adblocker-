@@ -23,3 +23,8 @@ hides leftover ad elements, and on YouTube web skips/fast-forwards ads. Ad sites
 With the ad skipper enabled and blocking turned on, the "cut YouTube during ads" switch drops the YouTube app's
 connection for ~2.5 s when an ad marker is seen on screen, hoping YouTube resumes without the ad. Untested; the on-screen
 markers (`Ad ·`, `Visit advertiser`, `Sponsored`) are best guesses and may need adjusting per YouTube version.
+
+## Experimental: cut before ad markers
+Android 11+. While the YouTube seek bar is visible, the skipper takes a screenshot, finds the yellow ad-break markers on the bar,
+converts them to times using the player's time labels, and cuts YouTube's connection from 5 s before each marker for 7 s.
+View ids (`time_bar`, `time_bar_current_time`) and the marker colour are best guesses; a toast shows "Ad markers at ..." when found.

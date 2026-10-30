@@ -1,8 +1,14 @@
 package com.gabriel.adblocker
 
 import android.accessibilityservice.AccessibilityService
+import android.graphics.Bitmap
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.view.Display
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.widget.Toast
 
 /** Clicks YouTube's "Skip ad" button as soon as it shows up. */
 class YouTubeSkipService : AccessibilityService() {
@@ -11,6 +17,60 @@ class YouTubeSkipService : AccessibilityService() {
         "com.google.android.youtube:id/skip_ad_button_container",
     )
     private val skipTexts = listOf("skip ads", "skip ad", "skip")
+
+    // --- cutting a few seconds before YouTube's yellow ad markers ---
+    private val handler = Handler(Looper.getMainLooper())
+    private var adTimes: List<Int> = emptyList()   // seconds into the video
+    private var videoLength = 0
+    private var syncPos = 0
+    private var syncAt = 0L
+    private var lastScan = 0L
+    private val fired = HashSet<Int>()
+    private var ticking = false
+    private val tick = object : Runnable {
+        override fun run() {
+            ticking = false
+            if (adTimes.isEmpty() || !Prefs.markerCutEnabled(this@YouTubeSkipService)) return
+            val pos = syncPos + (System.currentTimeMillis() - syncAt) / 1000.0
+            for (t in adTimes) {
+                if (t !in fired && pos >= t - LEAD_S && pos < t + 1) {
+                    fired += t
+                    BlockerService.instance?.cutYouTube(CUT_MARKER_MS, force = true)
+                }
+            }
+            ticking = true
+            handler.postDelayed(this, 400)
+        }
+    }
+
+    private fun trackMarkers(root: AccessibilityNodeInfo) {
+        if (!Prefs.markerCutEnabled(this)) return
+        val now = System.currentTimeMillis()
+        AdMarkers.readPosition(root)?.let { (cur, total) ->
+            if (total != videoLength) { videoLength = total; adTimes = emptyList(); fired.clear() }
+            syncPos = cur; syncAt = now
+        }
+        if (videoLength == 0 || Build.VERSION.SDK_INT < 30 || now - lastScan < 2000) return
+        val bar = AdMarkers.barBounds(root) ?: return
+        lastScan = now
+        takeScreenshot(Display.DEFAULT_DISPLAY, mainExecutor, object : TakeScreenshotCallback {
+            override fun onSuccess(result: ScreenshotResult) {
+                val hw = result.hardwareBuffer
+                try {
+                    val wrapped = Bitmap.wrapHardwareBuffer(hw, result.colorSpace) ?: return
+                    val shot = wrapped.copy(Bitmap.Config.ARGB_8888, false)
+                    val found = AdMarkers.findMarkers(shot, bar).map { (it * videoLength).toInt() }
+                    if (found.isNotEmpty() && found != adTimes) {
+                        adTimes = found
+                        Toast.makeText(this@YouTubeSkipService,
+                            "Ad markers at " + found.joinToString { "%d:%02d".format(it / 60, it % 60) }, Toast.LENGTH_SHORT).show()
+                    }
+                } finally { hw.close() }
+                if (adTimes.isNotEmpty() && !ticking) { ticking = true; handler.post(tick) }
+            }
+            override fun onFailure(errorCode: Int) {}
+        })
+    }
 
     private var adActive = false
     private var lastAdSeen = 0L
@@ -47,6 +107,7 @@ class YouTubeSkipService : AccessibilityService() {
         if (root.packageName != "com.google.android.youtube") return
         try {
             trackAd(root)
+            trackMarkers(root)
             for (id in skipIds) {
                 for (n in root.findAccessibilityNodeInfosByViewId(id)) if (click(n)) return
             }
@@ -71,4 +132,9 @@ class YouTubeSkipService : AccessibilityService() {
     }
 
     override fun onInterrupt() {}
+
+    private companion object {
+        const val LEAD_S = 5      // start the cut this many seconds before the ad break
+        const val CUT_MARKER_MS = 7000L
+    }
 }

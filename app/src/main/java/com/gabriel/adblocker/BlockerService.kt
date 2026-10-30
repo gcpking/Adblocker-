@@ -106,16 +106,16 @@ class BlockerService : VpnService() {
     }
 
     /** Called by the ad detector when an ad appears on screen. */
-    fun cutYouTube() = main.post {
+    fun cutYouTube(durationMs: Long = CUT_MS, force: Boolean = false) = main.post {
         val now = System.currentTimeMillis()
-        if (!running || cutting || now - lastCut < CUT_COOLDOWN_MS) return@post
+        if (!running || cutting || (!force && now - lastCut < CUT_COOLDOWN_MS)) return@post
         if (!establishCut()) return@post
         cutting = true
         lastCut = now
         main.postDelayed({
             cutting = false
             if (running) establishNormal()
-        }, CUT_MS)
+        }, durationMs)
     }
 
     private fun startTunnel(pfd: ParcelFileDescriptor, filterDns: Boolean) {
